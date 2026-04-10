@@ -7,20 +7,20 @@
     "start": "node .output/server/index.mjs"
   },
   "dependencies": {
+    "@nuxt/image": "^2.0.0",
     "@nuxtjs/supabase": "latest",
     "@nuxtjs/tailwindcss": "latest",
-    "@nuxt/image-edge": "latest",
     "@vueuse/core": "latest",
     "lucide-vue-next": "latest",
-    "zod": "latest",
-    "nuxt": "latest"
+    "nuxt": "latest",
+    "zod": "latest"
   },
   "devDependencies": {
-    "nuxi": "latest",
-    "tailwindcss": "3.3.2",
     "@tailwindcss/postcss": "latest",
-    "postcss": "latest",
+    "@types/node": "latest",
     "autoprefixer": "latest",
-    "@types/node": "latest"
+    "nuxi": "latest",
+    "postcss": "latest",
+    "tailwindcss": "3.3.2"
   }
 }

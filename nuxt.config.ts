@@ -1,7 +1,10 @@
 export default defineNuxtConfig({
+  // Prevent accidental breaking changes from future updates
+  compatibilityDate: "2026-04-10",
+
   devtools: { enabled: true },
 
-  modules: ["@nuxtjs/supabase", "@nuxtjs/tailwindcss", "@nuxt/image-edge"],
+  modules: ["@nuxtjs/supabase", "@nuxtjs/tailwindcss", "@nuxt/image"],
 
   supabase: {
     redirect: false,
