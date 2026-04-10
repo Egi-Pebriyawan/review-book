@@ -4,7 +4,8 @@
   "scripts": {
     "dev": "nuxi dev",
     "build": "nuxi build",
-    "start": "node .output/server/index.mjs"
+    "start": "node .output/server/index.mjs",
+    "supabase:gen-types": "supabase gen types typescript --project-id YOUR_PROJECT_ID > types/database.types.ts"
   },
   "dependencies": {
     "@nuxt/image": "^2.0.0",
