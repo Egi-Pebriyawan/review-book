@@ -1,0 +1,349 @@
+-- ============================================================
+-- BOOK REVIEW WEBSITE — Supabase Schema
+-- Jalankan seluruh file ini sekaligus di SQL Editor Supabase
+-- ============================================================
+
+
+-- ────────────────────────────────────────────────────────────
+-- EXTENSION
+-- ────────────────────────────────────────────────────────────
+create extension if not exists "uuid-ossp";
+
+
+-- ────────────────────────────────────────────────────────────
+-- TABLE: books
+-- ────────────────────────────────────────────────────────────
+create table public.books (
+  id            uuid primary key default uuid_generate_v4(),
+  created_at    timestamptz default now(),
+  updated_at    timestamptz default now(),
+
+  -- Identitas buku (dari Google Books API)
+  title         text not null,
+  slug          text not null unique,         -- "atomic-habits" untuk URL
+  author        text not null,
+  cover_url     text,                         -- URL langsung dari Google Books
+  description   text,                         -- sinopsis dari API
+  isbn          text,
+  pages         int,
+  published_year int,
+  language      text default 'id',
+  genre         text[],                       -- array: ["self-help", "produktivitas"]
+
+  -- Review dari kamu (owner)
+  pros          text[],                       -- array kelebihan
+  cons          text[],                       -- array kekurangan
+  owner_review  text,                         -- review panjang dari kamu
+  owner_rating  numeric(2,1) check (owner_rating >= 1 and owner_rating <= 5),
+
+  -- Status baca
+  read_status   text default 'read'
+                check (read_status in ('read', 'reading', 'wishlist')),
+  date_read     date,
+
+  -- Affiliate links
+  shopee_url    text,
+  tokped_url    text,
+  tiktok_url    text,
+  gramedia_url  text,
+
+  -- Stats (di-update via trigger)
+  avg_rating    numeric(3,2) default 0,
+  total_ratings int default 0,
+  total_comments int default 0,
+
+  is_published  boolean default true
+);
+
+-- Index untuk performa query
+create index idx_books_slug       on public.books(slug);
+create index idx_books_genre      on public.books using gin(genre);
+create index idx_books_status     on public.books(read_status);
+create index idx_books_published  on public.books(is_published);
+
+
+-- ────────────────────────────────────────────────────────────
+-- TABLE: comments
+-- ────────────────────────────────────────────────────────────
+create table public.comments (
+  id          uuid primary key default uuid_generate_v4(),
+  created_at  timestamptz default now(),
+
+  book_id     uuid not null references public.books(id) on delete cascade,
+
+  -- Identitas pengunjung (tidak perlu login)
+  name        text not null check (char_length(name) >= 2),
+  email       text,                           -- opsional, tidak ditampilkan publik
+  content     text not null check (char_length(content) >= 5),
+
+  -- Moderasi
+  is_approved boolean default false,          -- kamu approve dulu sebelum tampil
+  is_spam     boolean default false
+);
+
+create index idx_comments_book_id   on public.comments(book_id);
+create index idx_comments_approved  on public.comments(book_id, is_approved);
+
+
+-- ────────────────────────────────────────────────────────────
+-- TABLE: ratings
+-- ────────────────────────────────────────────────────────────
+create table public.ratings (
+  id          uuid primary key default uuid_generate_v4(),
+  created_at  timestamptz default now(),
+
+  book_id     uuid not null references public.books(id) on delete cascade,
+  score       int not null check (score >= 1 and score <= 5),
+
+  -- Fingerprint sederhana supaya tidak bisa rating berkali-kali
+  -- (pakai kombinasi IP + user_agent, bukan akun)
+  fingerprint text not null,
+
+  unique(book_id, fingerprint)               -- satu fingerprint = satu rating per buku
+);
+
+create index idx_ratings_book_id on public.ratings(book_id);
+
+
+-- ────────────────────────────────────────────────────────────
+-- TABLE: profile
+-- Satu baris saja — data profil pemilik website
+-- ────────────────────────────────────────────────────────────
+create table public.profile (
+  id          uuid primary key default uuid_generate_v4(),
+  name        text not null,
+  bio         text,
+  avatar_url  text,
+  location    text,
+
+  -- Sosmed
+  instagram   text,
+  twitter     text,
+  tiktok      text,
+  goodreads   text,
+
+  -- Donasi
+  saweria_url text,
+  trakteer_url text,
+
+  -- Reading goals
+  yearly_target int default 24,              -- target buku per tahun
+
+  updated_at  timestamptz default now()
+);
+
+
+-- ────────────────────────────────────────────────────────────
+-- TRIGGER: update avg_rating & total_ratings di tabel books
+-- Otomatis jalan setiap ada rating baru / dihapus
+-- ────────────────────────────────────────────────────────────
+create or replace function update_book_rating_stats()
+returns trigger as $$
+begin
+  update public.books
+  set
+    avg_rating    = (select round(avg(score)::numeric, 2) from public.ratings where book_id = coalesce(new.book_id, old.book_id)),
+    total_ratings = (select count(*) from public.ratings where book_id = coalesce(new.book_id, old.book_id))
+  where id = coalesce(new.book_id, old.book_id);
+  return coalesce(new, old);
+end;
+$$ language plpgsql security definer;
+
+create trigger trg_rating_stats
+  after insert or delete on public.ratings
+  for each row execute function update_book_rating_stats();
+
+
+-- ────────────────────────────────────────────────────────────
+-- TRIGGER: update total_comments di tabel books
+-- ────────────────────────────────────────────────────────────
+create or replace function update_book_comment_count()
+returns trigger as $$
+begin
+  update public.books
+  set total_comments = (
+    select count(*) from public.comments
+    where book_id = coalesce(new.book_id, old.book_id)
+    and is_approved = true
+  )
+  where id = coalesce(new.book_id, old.book_id);
+  return coalesce(new, old);
+end;
+$$ language plpgsql security definer;
+
+create trigger trg_comment_count
+  after insert or update or delete on public.comments
+  for each row execute function update_book_comment_count();
+
+
+-- ────────────────────────────────────────────────────────────
+-- TRIGGER: auto-update updated_at pada tabel books
+-- ────────────────────────────────────────────────────────────
+create or replace function touch_updated_at()
+returns trigger as $$
+begin
+  new.updated_at = now();
+  return new;
+end;
+$$ language plpgsql;
+
+create trigger trg_books_updated_at
+  before update on public.books
+  for each row execute function touch_updated_at();
+
+
+-- ────────────────────────────────────────────────────────────
+-- ROW LEVEL SECURITY (RLS)
+-- ────────────────────────────────────────────────────────────
+
+-- Aktifkan RLS di semua tabel
+alter table public.books    enable row level security;
+alter table public.comments enable row level security;
+alter table public.ratings  enable row level security;
+alter table public.profile  enable row level security;
+
+
+-- BOOKS --
+-- Publik hanya bisa baca buku yang is_published = true
+create policy "publik bisa baca buku published"
+  on public.books for select
+  using (is_published = true);
+
+-- Admin (user yang login) bisa baca semua, termasuk draft
+create policy "admin bisa baca semua buku"
+  on public.books for select
+  to authenticated
+  using (true);
+
+-- Hanya admin yang bisa insert, update, delete
+create policy "admin bisa insert buku"
+  on public.books for insert
+  to authenticated
+  with check (true);
+
+create policy "admin bisa update buku"
+  on public.books for update
+  to authenticated
+  using (true);
+
+create policy "admin bisa delete buku"
+  on public.books for delete
+  to authenticated
+  using (true);
+
+
+-- COMMENTS --
+-- Publik hanya bisa baca komentar yang sudah di-approve
+create policy "publik bisa baca komentar approved"
+  on public.comments for select
+  using (is_approved = true and is_spam = false);
+
+-- Admin bisa baca semua komentar (termasuk yang pending)
+create policy "admin bisa baca semua komentar"
+  on public.comments for select
+  to authenticated
+  using (true);
+
+-- Siapapun bisa kirim komentar baru (anon)
+create policy "siapapun bisa kirim komentar"
+  on public.comments for insert
+  to anon, authenticated
+  with check (true);
+
+-- Hanya admin yang bisa update (approve/reject) dan delete
+create policy "admin bisa update komentar"
+  on public.comments for update
+  to authenticated
+  using (true);
+
+create policy "admin bisa delete komentar"
+  on public.comments for delete
+  to authenticated
+  using (true);
+
+
+-- RATINGS --
+-- Publik bisa baca semua rating
+create policy "publik bisa baca rating"
+  on public.ratings for select
+  using (true);
+
+-- Siapapun bisa kirim rating (dikontrol via fingerprint unique constraint)
+create policy "siapapun bisa kirim rating"
+  on public.ratings for insert
+  to anon, authenticated
+  with check (true);
+
+
+-- PROFILE --
+-- Publik bisa baca profil
+create policy "publik bisa baca profil"
+  on public.profile for select
+  using (true);
+
+-- Hanya admin yang bisa update profil
+create policy "admin bisa update profil"
+  on public.profile for update
+  to authenticated
+  using (true);
+
+
+-- ────────────────────────────────────────────────────────────
+-- SEED DATA — 2 buku contoh untuk testing
+-- Hapus bagian ini sebelum production
+-- ────────────────────────────────────────────────────────────
+insert into public.books (
+  title, slug, author, cover_url, description,
+  isbn, pages, published_year, language, genre,
+  pros, cons, owner_review, owner_rating,
+  read_status, date_read,
+  shopee_url, tokped_url
+) values
+(
+  'Atomic Habits',
+  'atomic-habits',
+  'James Clear',
+  'https://books.google.com/books/content?id=XfFvDwAAQBAJ&printsec=frontcover&img=1&zoom=1',
+  'Sebuah cara yang mudah dan terbukti untuk membangun kebiasaan baik dan menghilangkan kebiasaan buruk.',
+  '9780735211292', 320, 2018, 'en',
+  array['self-help', 'produktivitas', 'psikologi'],
+  array['Konsep 1% better every day sangat actionable', 'Banyak contoh nyata dari atlet dan bisnis', 'Mudah dibaca dan tidak bertele-tele'],
+  array['Beberapa konsep terasa repetitif di bagian akhir', 'Kurang dalam membahas kebiasaan buruk yang kompleks'],
+  'Buku ini mengubah cara saya memandang perubahan. Intinya: jangan fokus ke tujuan, fokus ke sistem. Highly recommended untuk siapapun yang ingin produktif.',
+  4.5,
+  'read', '2024-03-15',
+  'https://shopee.co.id',
+  'https://tokopedia.com'
+),
+(
+  'Filosofi Teras',
+  'filosofi-teras',
+  'Henry Manampiring',
+  'https://books.google.com/books/content?id=pBi3DwAAQBAJ&printsec=frontcover&img=1&zoom=1',
+  'Filsafat Yunani-Romawi kuno untuk mental health modern. Panduan praktis Stoicisme untuk generasi milenial Indonesia.',
+  '9786020639635', 344, 2018, 'id',
+  array['filsafat', 'self-help', 'mental-health'],
+  array['Penjelasan Stoicisme yang mudah dicerna', 'Contoh kasus yang sangat relevan dengan kehidupan Indonesia', 'Gaya bahasa ringan dan humoris'],
+  array['Beberapa bab terasa kurang dalam secara filosofis', 'Agak repetitif di bagian tengah'],
+  'Bacaan wajib untuk yang sering overthinking. Henry berhasil membuat filsafat kuno terasa relevan dan praktis. Bab tentang dikotomi kendali adalah yang paling berkesan.',
+  4.8,
+  'read', '2024-01-20',
+  'https://shopee.co.id',
+  'https://tokopedia.com'
+);
+
+-- Seed profil pemilik website
+insert into public.profile (name, bio, location, yearly_target)
+values (
+  'Nama Kamu',
+  'Pembaca buku, penulis review. Suka self-help, filsafat, dan fiksi ilmiah.',
+  'Indonesia',
+  24
+);
+
+
+-- ────────────────────────────────────────────────────────────
+-- SELESAI
+-- Cek hasilnya di Table Editor → kamu harusnya lihat
+-- tabel: books, comments, ratings, profile
+-- ────────────────────────────────────────────────────────────

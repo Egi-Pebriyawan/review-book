@@ -1,0 +1,26 @@
+{
+  "name": "review-book",
+  "private": true,
+  "scripts": {
+    "dev": "nuxi dev",
+    "build": "nuxi build",
+    "start": "node .output/server/index.mjs"
+  },
+  "dependencies": {
+    "@nuxtjs/supabase": "latest",
+    "@nuxtjs/tailwindcss": "latest",
+    "@nuxt/image-edge": "latest",
+    "@vueuse/core": "latest",
+    "lucide-vue-next": "latest",
+    "zod": "latest",
+    "nuxt": "latest"
+  },
+  "devDependencies": {
+    "nuxi": "latest",
+    "tailwindcss": "3.3.2",
+    "@tailwindcss/postcss": "latest",
+    "postcss": "latest",
+    "autoprefixer": "latest",
+    "@types/node": "latest"
+  }
+}
