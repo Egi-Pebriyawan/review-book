@@ -1,13 +1,13 @@
 <template>
   <div>
     <!-- Hero Section -->
-    <section class="bg-gradient-to-r from-gray-900 to-gray-800 text-white py-20">
+    <section class="bg-gradient-to-r from-rose-900 to-rose-800 text-white py-20">
       <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-        <h1 class="text-4xl sm:text-5xl font-bold mb-4">Review Buku Jujur & Mendalam</h1>
-        <p class="text-xl text-gray-300 mb-8">Temukan buku terbaik untuk dibaca. Review detail, rating akurat, dan rekomendasi yang tepat.</p>
+        <h1 class="text-4xl sm:text-5xl font-serif font-bold mb-4">Review Buku Jujur & Mendalam</h1>
+        <p class="text-xl text-rose-100 mb-8">Temukan buku terbaik untuk dibaca. Review detail, rating akurat, dan rekomendasi yang tepat.</p>
         <div class="flex flex-col sm:flex-row gap-4 justify-center">
-          <NuxtLink to="/books" class="px-8 py-3 bg-white text-gray-900 font-semibold rounded-lg hover:bg-gray-100 transition-colors"> Lihat Semua Buku </NuxtLink>
-          <a v-if="profile?.saweria_url" :href="profile.saweria_url" target="_blank" class="px-8 py-3 bg-yellow-500 text-white font-semibold rounded-lg hover:bg-yellow-600 transition-colors"> ☕ Traktir Kopi </a>
+          <NuxtLink to="/books" class="px-8 py-3 bg-white text-rose-900 font-semibold rounded-lg hover:bg-rose-50 transition-colors"> Lihat Semua Buku </NuxtLink>
+          <a v-if="profile?.saweria_url" :href="profile.saweria_url" target="_blank" class="px-8 py-3 bg-rose-500 text-white font-semibold rounded-lg hover:bg-rose-600 transition-colors"> ☕ Traktir Kopi </a>
         </div>
       </div>
     </section>
