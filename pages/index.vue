@@ -83,8 +83,8 @@ const { data: profile } = await useAsyncData("profile-home", async () => {
 
 // Fetch latest 5 books
 const { data: latestBooks, pending } = await useAsyncData("latest-books", async () => {
-  const books = await getBooks({ limit: 5 });
-  return books;
+  const result = await getBooks({ limit: 5 });
+  return result.data || [];
 });
 
 // Calculate reading stats
