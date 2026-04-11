@@ -63,6 +63,13 @@
 </template>
 
 <script setup lang="ts">
+/**
+ * Halaman Beranda (Home Page / Landing Page)
+ * Tampil pada URL router root `/`.
+ * File ini bertugas sebagai fasad pertama yang dilihat oleh pengunjung. Mulai dari Hero Section visual,
+ * papan statistik Progress/Target buku tahunan (kalkulasi dari Total Reads), sampai pada *looping* 
+ * daftar 5 buah ulasan (review) buku paling baru (The Latest Hooks).
+ */
 definePageMeta({
   layout: "default",
 });

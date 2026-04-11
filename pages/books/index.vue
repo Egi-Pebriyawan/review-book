@@ -82,6 +82,12 @@
 </template>
 
 <script setup lang="ts">
+/**
+ * Halaman Katalog Buku (Sistem Library)
+ * Tampil ketika user berlayar ke root URL `/books`.
+ * Mengeksekusi penarikan list panjang (All Books) dan menyediakan fungsionalitas UI logika 
+ * semacam pemfilteran (Genre Filter System) yang dapat dipilah klik secara spesifik oleh client.
+ */
 definePageMeta({
   layout: "default",
 });

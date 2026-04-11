@@ -1,22 +1,199 @@
-# review-book
+# Review Buku (Nuxt 3 Application)
 
-Scaffold Nuxt 3 + Tailwind + Supabase project files as requested in Issue #1.
+Aplikasi Web Review Buku ini dibangun menggunakan framework [Nuxt 3](https://nuxt.com/) (Vue.js), [Tailwind CSS](https://tailwindcss.com/) untuk UI styling, dan menggunakan database PostgreSQL dari [Supabase](https://supabase.com/). Misi dari sistem ini adalah menampilkan koleksi bacaan pribadi secara profesional sekaligus mendukung interaksi pengunjung (melalui rating dan komentar).
 
-Quick start:
+---
 
-```powershell
-npm install
-npm run dev
+## 🎨 Diagram & Alur Aplikasi (Flow)
+
+Berikut adalah ringkasan skema arsitektur dan aliran data antar-layer aplikasi.
+
+### Arsitektur Umum & Alur Data
+
+```mermaid
+flowchart TD
+    subgraph UI Layer (Pages/Components)
+        Home[Halaman Beranda]
+        Catalog[Daftar Buku]
+        Detail[Detail Buku]
+        Admin[Dashboard Admin]
+    end
+
+    subgraph Composables (State & API Wrappers)
+        useBooks[useBooks.ts]
+        useRatings[useRatings.ts]
+        useComments[useComments.ts]
+        useBookSearch[useBookSearch.ts]
+    end
+
+    subgraph External & Backend (Server/Supabase)
+        Supabase[(Supabase PostgreSQL)]
+        Auth[Supabase Auth]
+        GBooks[Google Books API]
+        OLibrary[Open Library API]
+        Nitro[Nuxt Server/API]
+    end
+
+    Home -->|"Meminta Top Books"| useBooks
+    Catalog -->|"Filter & Paginasi"| useBooks
+    Detail -->|"Meminta Detail Buku & Komentar"| useBooks
+    Detail --> useRatings
+    Detail --> useComments
+    Admin -->|"Mencari Buku Global"| useBookSearch
+
+    useBooks <-->|"CRUD / PostgREST"| Supabase
+    useRatings <-->|"Insert"| Supabase
+    useComments <-->|"Insert/Read"| Supabase
+    Admin <-->|"User Validation"| Auth
+
+    useBookSearch -->|"GET /api/book-search"| Nitro
+    Nitro -->|"Fetch (Primary)"| GBooks
+    Nitro -.->|"Fetch (Fallback)"| OLibrary
 ```
 
-Files added:
+### Flow Pencarian Detail Buku
 
-- package.json
-- nuxt.config.ts
-- tailwind.config.ts
-- postcss.config.cjs
-- app.vue
-- pages/index.vue
-- assets/css/tailwind.css
+```mermaid
+sequenceDiagram
+    participant User
+    participant NuxtComponent
+    participant Composables
+    participant NuxtNitroServer
+    participant Supabase
+    participant ExternalAPI
 
-After `npm install`, `npm run dev` should start the dev server at http://localhost:3000
+    User->>NuxtComponent: Kunjungi "Daftar Buku"
+    NuxtComponent->>Composables: Panggil getBooks()
+    Composables->>Supabase: Query Database
+    Supabase-->>Composables: Return { data, count }
+    Composables-->>NuxtComponent: Data ter-update
+    
+    User->>NuxtComponent: (Add Book) Cari berdasarkan Teks
+    NuxtComponent->>NuxtNitroServer: GET /api/book-search?q=Harry
+    NuxtNitroServer->>ExternalAPI: Call Google Books
+    alt Google Books Berhasil
+        ExternalAPI-->>NuxtNitroServer: JSON Response
+    else Timeout / Gagal
+        NuxtNitroServer->>ExternalAPI: Fallback (Open Library)
+        ExternalAPI-->>NuxtNitroServer: JSON Response
+    end
+    NuxtNitroServer-->>NuxtComponent: Return List Hasil Pencarian
+```
+
+---
+
+## 🏗 Struktur Direktori Project
+
+```text
+review-book/
+├── assets/         # File statis dan CSS utama (Tailwind entry point).
+├── components/     # Komponen UI interaktif (book/BookCard.vue, ui/StarRating.vue, dll).
+├── composables/    # Logika bisnis dan fungsi untuk re-usable state/Supabase call.
+├── layouts/        # Layout yang menyelimuti aplikasi (default.vue = user, admin.vue = dashboard).
+├── middleware/     # Fungsi penengah/penjaga pintu contohnya route guard admin.
+├── pages/          # Konfigurasi rute (View-Pages) di Nuxt (index, about, login, dsb).
+├── server/api/     # Nuxt Nitro server API endpoints.
+├── types/          # Typescript declaration (.ts) dan type safety untuk DB Model.
+├── nuxt.config.ts  # Konfigurasi Nuxt environment, plugins, supabase, dan meta head.
+└── tailwind.config.ts  # Customisasi token Tailwind.
+```
+
+---
+
+## 🗄️ Database Schema (Supabase)
+
+Database ini memfasilitasi operasional baca dan review melalui skema tabel berikut:
+
+1. **`books`** (Daftar Buku)
+   - `id` (UUID, PK) - Primary Key
+   - `title`, `author` (String) - Judul dan Penulis
+   - `slug` (String, Unique) - Format perutean url
+   - `cover_url` (Text) - Url cover dari eksternal
+   - `genre` (String array) - Array kategori teks
+   - `published_year` (Integer) & `pages` (Integer)
+   - `read_status` (Enum/String: 'read', 'reading', 'plan')
+   - `owner_rating` (Numeric/Float), `avg_rating` (Numeric) 
+   - `owner_review` (Text), `pros`, `cons` (Text/Array)
+   - `shopee_url`, `tokped_url`, `tiktok_url`, `gramedia_url` (Affiliate Links)
+
+2. **`comments`** (Diskusi User)
+   - `id` (UUID, PK)
+   - `book_id` (UUID, FK -> books.id)
+   - `name`, `email`, `content` (String/Text)
+
+3. **`ratings`** (Interaksi Rate)
+   - `id` (UUID, PK)
+   - `book_id` (UUID, FK -> books.id)
+   - `score` (Integer 1-5)
+
+4. **`profile`** (Data Pribadi Owner)
+   - `id` (UUID, PK)
+   - `yearly_target` (Integer) - Target baca buku
+   - `instagram`, `tiktok`, `saweria_url`, dll (String URL)
+
+---
+
+## 🔌 API & Composables Tersedia
+
+| API / Composable       | Path / Filename             | Deskripsi                                                                 |
+|------------------------|-----------------------------|---------------------------------------------------------------------------|
+| **useBooks**           | `composables/useBooks.ts`   | Berisi method `getBooks`, `getBookBySlug`, `createBook` untuk integrasi tabel `books`. |
+| **useComments**        | `composables/useComments.ts`| Mengemas operasi input / baca tabel `comments`. |
+| **useRatings**         | `composables/useRatings.ts` | Mengatasi *score submission* rating buku dari publik. |
+| **Book Search Server** | `/api/book-search.get`      | Endpoint backend yang merangkai query dari client dan call fetch Google Books API / OpenLibrary API. |
+
+---
+
+## 💻 Environment Setup & Menjalankan Aplikasi
+
+**1. Persiapan Kebutuhan Server Lokal:**
+- Anda membutuhkan Node.js (versi minimal 18.x).
+- Buat proyek Supabase di dashboard [supabase.com](https://supabase.com/).
+
+**2. Instalasi:**
+```powershell
+# Clone kode ke lokal
+git clone <repository> review-book
+cd review-book
+
+# Install dependencies (NPM)
+npm install
+```
+
+**3. Konfigurasi Environment (`.env`):**
+Duplikasi file konfigurasi environment (jika belum ada, buat file baru `.env` di root direktori):
+```env
+# Koneksi Basis Data/Cloud Supabase
+SUPABASE_URL=https://[PROJECT_ID].supabase.co
+SUPABASE_KEY=[ANON_PUBLIC_KEY]
+
+# Bebas diisi untuk keperluan Google Books external API (Opsional)
+GOOGLE_BOOKS_API_KEY=[API_KEY_ANDA]
+```
+
+**4. Run Dev Server:**
+```powershell
+npm run dev
+```
+Buka browser dan arahkan ke http://localhost:3000.
+
+---
+
+## 🧪 Testing (Uji Coba Otomatis)
+
+Project ini dilengkapi dengan test script menggunakan [Vitest](https://vitest.dev/).
+Skenario Test lengkap telah dirincikan pada root dokumen `API_TEST_SCENARIOS.md`.
+
+Jalankan perintah ini untuk memulai _Testing Mode_:
+```powershell
+# Eksekusi unit test di mode Headless CLI
+npm run test
+
+# Cek hasil tes yang tersusun dengan User Interface
+npm run test:ui
+
+# Tinjau Code Coverage
+npm run test:coverage
+```
+
+⚙️ **Library Tambahan**: Perangkat seperti Vitest UI dan Playwright sudah disiapkan di dalam konfigurasi untuk mendukung skalabilitas otomatisasi kedepannya.

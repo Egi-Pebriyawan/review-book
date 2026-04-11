@@ -273,6 +273,15 @@
 </template>
 
 <script setup lang="ts">
+/**
+ * Halaman Detail Tunggal Buku (Single Dynamic Slug Route)
+ * Dieksekusi merambat pada routing dinamis `/books/[nama-unik-buku]`.
+ * Merupakan inti dari ekosistem aplikasi di mana *frontend* memproses banyak API Composables sekaligus:
+ * 1. Tarik Data Utama Buku & Rating Pemilik
+ * 2. Tarik Daftar Komentar (Sistem Chat Reader)
+ * 3. Tarik Status External Affiliate (E-commerce Link Output)
+ * 4. Fungsi Input Feedback (Form Rating & Write Comment) 
+ */
 const route = useRoute();
 const slug = route.params.slug as string;
 
