@@ -1,7 +1,7 @@
 <template>
   <div>
     <!-- Hero Section -->
-    <section class="bg-gradient-to-r from-rose-900 to-rose-800 text-white py-20">
+    <section class="bg-gradient-to-r from-rose-400 to-rose-400 text-white py-20">
       <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
         <h1 class="text-4xl sm:text-5xl font-serif font-bold mb-4">Review Buku Jujur & Mendalam</h1>
         <p class="text-xl text-rose-100 mb-8">Temukan buku terbaik untuk dibaca. Review detail, rating akurat, dan rekomendasi yang tepat.</p>
