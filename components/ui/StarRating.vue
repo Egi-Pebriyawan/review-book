@@ -16,8 +16,8 @@
         />
       </svg>
     </button>
-    <span v-if="showLabel && displayRating" class="ml-1 text-sm font-medium text-gray-700">{{ displayRating.toFixed(1) }}</span>
-    <span v-if="showCount && count" class="text-sm text-gray-500 ml-1">({{ count }} rating{{ count > 1 ? "s" : "" }})</span>
+    <span v-if="showLabel && displayRating" class="ml-2 text-sm font-semibold text-gray-900">{{ displayRating.toFixed(1) }}<span class="text-gray-500 font-normal">/5</span></span>
+    <span v-if="showCount && count" class="ml-1 text-sm text-gray-500">({{ count }} rating{{ count > 1 ? "s" : "" }})</span>
   </div>
 </template>
 

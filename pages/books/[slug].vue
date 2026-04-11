@@ -105,9 +105,8 @@
           <h1 class="text-3xl font-bold text-gray-900 mb-2">{{ book.title }}</h1>
           <p class="text-lg text-gray-600 mb-4">oleh {{ book.author }}</p>
 
-          <div class="flex items-center gap-4 mb-4">
-            <StarRating :rating="book.avg_rating || 0" :count="book.total_ratings || 0" show-count />
-            <span class="text-2xl font-bold text-gray-900">{{ book.avg_rating ? book.avg_rating.toFixed(1) : "0.0" }}</span>
+          <div class="flex items-center gap-2 mb-4">
+            <StarRating :rating="book.avg_rating || 0" :count="book.total_ratings || 0" show-count show-label />
           </div>
 
           <div class="flex items-center gap-2 text-sm text-gray-600">
@@ -136,7 +135,7 @@
             <p class="text-gray-700 leading-relaxed whitespace-pre-line">{{ book.owner_review }}</p>
           </div>
           <div class="mt-4 flex items-center gap-2">
-            <span class="text-sm text-gray-600">Rating saya:</span>
+            <span class="text-sm font-medium text-gray-700">Rating saya:</span>
             <StarRating :rating="book.owner_rating || 0" show-label />
           </div>
         </div>
@@ -186,7 +185,10 @@
           <p class="text-sm text-gray-600 mb-4">Bagaimana pendapat Anda tentang buku ini?</p>
 
           <div v-if="ratingSubmitted" class="text-center py-4">
-            <svg class="w-16 h-16 mx-auto text-green-500 mb-2" fill="currentColor" viewBox="0 0 20 20">
+            <div class="flex items-center justify-center gap-2 mb-3">
+              <StarRating :rating="visitorRating" show-label />
+            </div>
+            <svg class="w-12 h-12 mx-auto text-green-500 mb-2" fill="currentColor" viewBox="0 0 20 20">
               <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
             </svg>
             <p class="text-green-700 font-medium">Terima kasih! Rating Anda sudah tercatat.</p>
@@ -280,7 +282,7 @@
  * 1. Tarik Data Utama Buku & Rating Pemilik
  * 2. Tarik Daftar Komentar (Sistem Chat Reader)
  * 3. Tarik Status External Affiliate (E-commerce Link Output)
- * 4. Fungsi Input Feedback (Form Rating & Write Comment) 
+ * 4. Fungsi Input Feedback (Form Rating & Write Comment)
  */
 const route = useRoute();
 const slug = route.params.slug as string;
