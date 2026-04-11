@@ -72,6 +72,12 @@
 </template>
 
 <script setup lang="ts">
+/**
+ * Book Card (Komponen Vue UI Re-Usable Component)
+ * Mengontrol rendering modul bingkai kotak (card) bergambar satu judul entri buku. 
+ * Komponen portabel ini dipanggil dan dicetak berulang-ulang menggunakan directive `v-for` loop 
+ * dibekali dengan property (Props) 'book'.
+ */
 import { computed } from "vue";
 import type { Book } from "~/types";
 import StarRating from "~/components/ui/StarRating.vue";

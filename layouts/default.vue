@@ -102,6 +102,12 @@
 </template>
 
 <script setup lang="ts">
+/**
+ * Layout Komponen Utama: Default
+ * File Layout ini bertindak sebagai kerangka pembungkus master untuk halaman aplikasi web.
+ * Terdiri dari Navigasi (Header Navbar) di sebelah komponen teratas, lokasi injeksi page `<slot />` di middle layar, 
+ * dan informasi hak cipta (Footer) yang diam di lapisan paling dasar layaknya dokumen HTML klasik.
+ */
 const mobileMenuOpen = ref(false);
 const supabase = useSupabaseClient();
 const { data: profile } = await useAsyncData("profile", async () => {
