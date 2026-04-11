@@ -9,82 +9,47 @@ Aplikasi Web Review Buku ini dibangun menggunakan framework [Nuxt 3](https://nux
 Berikut adalah ringkasan skema arsitektur dan aliran data antar-layer aplikasi.
 
 ### Arsitektur Umum & Alur Data
+```mermaid
 flowchart TB
- subgraph UI["UI Layer (Pages/Components)"]
-        Home["Halaman Beranda"]
-        Catalog["Daftar Buku"]
-        Detail["Detail Buku"]
-        Admin["Dashboard Admin"]
+  subgraph UI["UI Layer (Pages/Components)"]
+    Home["Halaman Beranda"]
+    Catalog["Daftar Buku"]
+    Detail["Detail Buku"]
+    Admin["Dashboard Admin"]
   end
- subgraph Composables["Composables (State & API Wrappers)"]
-        useBooks["useBooks.ts"]
-        useRatings["useRatings.ts"]
-        useComments["useComments.ts"]
-        useBookSearch["useBookSearch.ts"]
-  end
- subgraph External["External & Backend (Server/Supabase)"]
-        Supabase[("Supabase PostgreSQL")]
-        Auth["Supabase Auth"]
-        GBooks["Google Books API"]
-        OLibrary["Open Library API"]
-        Nitro["Nuxt Server/API"]
-  end
- subgraph s1["External & Backend (Server/Supabase)"]
-        n1[("Supabase PostgreSQL")]
-        n2["Supabase Auth"]
-        n3["Google Books API"]
-        n4["Open Library API"]
-        n5["Nuxt Server/API"]
-  end
- subgraph s2["Composables (State & API Wrappers)"]
-        n6["useBooks.ts"]
-        n7["useRatings.ts"]
-        n8["useComments.ts"]
-        n9["useBookSearch.ts"]
-  end
- subgraph s3["UI Layer (Pages/Components)"]
-        n10["Halaman Beranda"]
-        n11["Daftar Buku"]
-        n12["Detail Buku"]
-        n13["Dashboard Admin"]
-  end
-    Home -- Meminta Top Books --> useBooks
-    Catalog -- Filter & Paginasi --> useBooks
-    Detail -- Meminta Detail Buku & Komentar --> useBooks
-    Detail --> useRatings & useComments
-    Admin -- Mencari Buku Global --> useBookSearch
-    useBooks <-- CRUD / PostgREST --> Supabase
-    useRatings <-- Insert --> Supabase
-    useComments <-- Insert/Read --> Supabase
-    Admin <-- User Validation --> Auth
-    useBookSearch -- "GET /api/book-search" --> Nitro
-    Nitro -- Fetch (Primary) --> GBooks
-    Nitro -. Fetch (Fallback) .-> OLibrary
-    n10 -- Meminta Top Books --> n6
-    n11 -- Filter & Paginasi --> n6
-    n12 -- Meminta Detail Buku & Komentar --> n6
-    n12 --> n7 & n8
-    n13 -- Mencari Buku Global --> n9
-    n6 <-- CRUD / PostgREST --> n1
-    n7 <-- Insert --> n1
-    n8 <-- Insert/Read --> n1
-    n13 <-- User Validation --> n2
-    n9 -- "GET /api/book-search" --> n5
-    n5 -- Fetch (Primary) --> n3
-    n5 -. Fetch (Fallback) .-> n4
 
-    n2@{ shape: rect}
-    n3@{ shape: rect}
-    n4@{ shape: rect}
-    n5@{ shape: rect}
-    n6@{ shape: rect}
-    n7@{ shape: rect}
-    n8@{ shape: rect}
-    n9@{ shape: rect}
-    n10@{ shape: rect}
-    n11@{ shape: rect}
-    n12@{ shape: rect}
-    n13@{ shape: rect}
+  subgraph Composables["Composables (State & API Wrappers)"]
+    useBooks["useBooks.ts"]
+    useRatings["useRatings.ts"]
+    useComments["useComments.ts"]
+    useBookSearch["useBookSearch.ts"]
+  end
+
+  subgraph External["External & Backend (Server/Supabase)"]
+    Supabase[("Supabase PostgreSQL")]
+    Auth["Supabase Auth"]
+    GBooks["Google Books API"]
+    OLibrary["Open Library API"]
+    Nitro["Nuxt Server/API"]
+  end
+
+  %% Relasi Antar Komponen
+  Home -- "Meminta Top Books" --> useBooks
+  Catalog -- "Filter & Paginasi" --> useBooks
+  Detail -- "Meminta Detail Buku & Komentar" --> useBooks
+  Detail --> useRatings
+  Detail --> useComments
+  Admin -- "Mencari Buku Global" --> useBookSearch
+
+  useBooks <--> |"CRUD / PostgREST"| Supabase
+  useRatings --> |"Insert"| Supabase
+  useComments <--> |"Insert/Read"| Supabase
+  Admin <--> |"User Validation"| Auth
+
+  useBookSearch -- "GET /api/book-search" --> Nitro
+  Nitro -- "Fetch (Primary)" --> GBooks
+  Nitro -. "Fetch (Fallback)" .-> OLibrary
+```
 
 
 ### Flow Pencarian Detail Buku
