@@ -1,11 +1,14 @@
 <template>
-  <div class="flex items-center gap-0.5">
+  <div class="flex items-center gap-0.5" role="group" aria-label="Star rating">
     <button
       v-for="star in 5"
       :key="star"
       @click="interactive ? emit('update:modelValue', star) : null"
-      :class="['transition-colors', interactive ? 'cursor-pointer hover:scale-110' : 'cursor-default', star <= displayRating ? 'text-amber-400' : 'text-gray-200']"
+      @mouseenter="interactive && (hoverRating = star)"
+      @mouseleave="interactive && (hoverRating = 0)"
+      :class="['transition-all hover:scale-105', interactive ? 'cursor-pointer' : 'cursor-default', star <= (hoverRating || displayRating) ? 'text-amber-400' : 'text-gray-300']"
       type="button"
+      :aria-label="`${star} star${star > 1 ? 's' : ''}`"
     >
       <svg class="w-5 h-5 fill-current" viewBox="0 0 20 20" aria-hidden="true">
         <path
@@ -13,12 +16,13 @@
         />
       </svg>
     </button>
-    <span v-if="showCount && count" class="text-sm text-gray-400 ml-1">({{ count }})</span>
+    <span v-if="showLabel && displayRating" class="ml-1 text-sm font-medium text-gray-700">{{ displayRating.toFixed(1) }}</span>
+    <span v-if="showCount && count" class="text-sm text-gray-500 ml-1">({{ count }} rating{{ count > 1 ? "s" : "" }})</span>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, ref } from "vue";
 
 const props = defineProps<{
   modelValue?: number;
@@ -26,8 +30,15 @@ const props = defineProps<{
   count?: number;
   interactive?: boolean;
   showCount?: boolean;
+  showLabel?: boolean;
 }>();
+
 const emit = defineEmits<{ "update:modelValue": (value: number) => void }>();
 
-const displayRating = computed(() => (props.interactive ? props.modelValue || 0 : Math.round(props.rating || 0)));
+const hoverRating = ref(0);
+
+const displayRating = computed(() => {
+  const val = props.interactive ? props.modelValue || 0 : Math.round((props.rating || 0) * 10) / 10;
+  return val;
+});
 </script>
