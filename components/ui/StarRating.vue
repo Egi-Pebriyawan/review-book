@@ -6,7 +6,7 @@
       @click="interactive ? emit('update:modelValue', star) : null"
       @mouseenter="interactive && (hoverRating = star)"
       @mouseleave="interactive && (hoverRating = 0)"
-      :class="['transition-all hover:scale-105', interactive ? 'cursor-pointer' : 'cursor-default', star <= (hoverRating || displayRating) ? 'text-amber-400' : 'text-gray-300']"
+      :class="['transition-all hover:scale-105', interactive ? 'cursor-pointer' : 'cursor-default', star <= (hoverRating || displayRating) ? 'text-rose-400' : 'text-gray-300']"
       type="button"
       :aria-label="`${star} star${star > 1 ? 's' : ''}`"
     >

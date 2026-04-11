@@ -22,15 +22,65 @@
         <div class="flex flex-wrap gap-1 mt-2">
           <GenreBadge v-for="g in (book.genre || []).slice(0, 3)" :key="g" :genre="g" />
         </div>
+
+        <!-- Affiliate Links with SVG Logos from Assets -->
+        <div v-if="hasAffiliateLinks" class="flex flex-wrap items-center gap-2 mt-2 pt-2 border-t border-gray-100">
+          <span class="text-xs text-gray-500 font-medium">Beli:</span>
+
+          <!-- Shopee -->
+          <a
+            v-if="book.shopee_url"
+            :href="book.shopee_url"
+            target="_blank"
+            @click.stop
+            class="inline-flex items-center gap-1.5 px-2 py-1 bg-orange-50 border border-orange-200 rounded-lg hover:bg-orange-100 transition-all"
+            title="Beli di Shopee"
+          >
+            <img src="@/assets/shopee.svg" alt="Shopee" class="w-4 h-4" />
+            <span class="text-xs font-semibold text-orange-700">Shopee</span>
+          </a>
+
+          <!-- Tokopedia -->
+          <a
+            v-if="book.tokped_url"
+            :href="book.tokped_url"
+            target="_blank"
+            @click.stop
+            class="inline-flex items-center gap-1.5 px-2 py-1 bg-green-50 border border-green-200 rounded-lg hover:bg-green-100 transition-all"
+            title="Beli di Tokopedia"
+          >
+            <img src="@/assets/tokopedia.svg" alt="Tokopedia" class="w-4 h-4" />
+            <span class="text-xs font-semibold text-green-700">Tokopedia</span>
+          </a>
+
+          <!-- TikTok Shop -->
+          <a
+            v-if="book.tiktok_url"
+            :href="book.tiktok_url"
+            target="_blank"
+            @click.stop
+            class="inline-flex items-center gap-1.5 px-2 py-1 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 transition-all"
+            title="Beli di TikTok Shop"
+          >
+            <img src="@/assets/tiktok.svg" alt="TikTok" class="w-4 h-4" />
+            <span class="text-xs font-semibold text-gray-900">TikTok</span>
+          </a>
+        </div>
       </div>
     </div>
   </NuxtLink>
 </template>
 
 <script setup lang="ts">
+import { computed } from "vue";
 import type { Book } from "~/types";
 import StarRating from "~/components/ui/StarRating.vue";
 import GenreBadge from "~/components/ui/GenreBadge.vue";
 
-defineProps<{ book: Book }>();
+const props = defineProps<{ book: Book }>();
+
+// Check if book has any affiliate links
+const hasAffiliateLinks = computed(() => {
+  return !!(props.book.shopee_url || props.book.tokped_url || props.book.tiktok_url);
+});
 </script>
