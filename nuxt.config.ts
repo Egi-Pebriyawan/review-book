@@ -4,7 +4,15 @@ export default defineNuxtConfig({
 
   devtools: { enabled: true },
 
-  modules: ["@nuxtjs/supabase", "@nuxtjs/tailwindcss", "@nuxt/image"],
+  modules: ["@nuxtjs/supabase", "@nuxtjs/tailwindcss", "@nuxt/image", "@nuxtjs/ngrok"],
+  ngrok: {
+    authtoken: "3CFnwIYHuzakSpmD1sIrhQNRGnq_23NjY1eFwLgE1iqBbWpNN", // Masukkan token kamu di sini
+  },
+  vite: {
+    server: {
+      allowedHosts: ["cobweb-turret-unreeling.ngrok-free.dev"],
+    },
+  },
 
   supabase: {
     redirect: false,
@@ -15,6 +23,12 @@ export default defineNuxtConfig({
     head: {
       charset: "utf-8",
       viewport: "width=device-width, initial-scale=1",
+      meta: [
+        {
+          name: "google-site-verification",
+          content: "ckZSQuDDO3riptg_wenLYLiUAirsHBQL7eoULy625vs",
+        },
+      ],
       link: [
         {
           rel: "preconnect",
