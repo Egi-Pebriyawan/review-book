@@ -6,7 +6,7 @@ export default defineNuxtConfig({
 
   modules: ["@nuxtjs/supabase", "@nuxtjs/tailwindcss", "@nuxt/image", "@nuxtjs/ngrok"],
   ngrok: {
-    authtoken: "3CFnwIYHuzakSpmD1sIrhQNRGnq_23NjY1eFwLgE1iqBbWpNN", // Masukkan token kamu di sini
+    authtoken: process.env.NGROK_AUTHTOKEN || "",
   },
   vite: {
     server: {
@@ -49,9 +49,5 @@ export default defineNuxtConfig({
 
   image: {
     domains: ["books.google.com", "covers.openlibrary.org"],
-  },
-
-  router: {
-    middleware: ["admin"],
   },
 });
